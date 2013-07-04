@@ -1,0 +1,3 @@
+#!/bin/bash
+#Innodb Log 事务日志的提交方式
+mysqld --help --verbose 2>/dev/null | grep ^innodb-flush-log-at-trx-commit

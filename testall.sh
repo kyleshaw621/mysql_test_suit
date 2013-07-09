@@ -7,9 +7,10 @@ workingpath=`pwd`
 backupScriptPath=/home/kyle/anbay-improvement/anbay_improvement/post_backup_insert_catalog
 changeMysql=$workingpath/switchmysql.sh
 changeStorage=$workingpath/switchstorage.sh
+changeAll=$workingpath/switch.sh
 ram=ramdisk
 disk=harddisk
-testtime=6
+testtime=1
 #test all in harddisk
 echo_title() {
 	mysql=$1
@@ -28,17 +29,19 @@ do
 	do
 		storageTarget=$storageIn
 		echo_title $mysqlTarget $storageTarget
-		$changeMysql $mysqlTarget > /dev/null 
-		$changeStorage $storageTarget > /dev/null
+		#$changeMysql $mysqlTarget > /dev/null 
+		#$changeStorage $storageTarget > /dev/null
+		$changeAll -m $mysqlTarget -a $storageTarget
 		cd $backupScriptPath
 		$backupScriptPath/repeatTest.sh $testtime
 		cd $workingpath
 	done
 		
 done
-#echo_title($disk,$disk)
-#$changeMysql $disk
-#$changeStorage $disk
-#$backupScript
 
-
+echo "****************************************"
+echo "* restore mysql and storage to $disk *"
+echo "****************************************"
+$changeAll -m $disk -a $disk
+#$changeMysql $disk > /dev/null 
+#$changeStorage $disk > /dev/null

@@ -7,6 +7,7 @@ RamdiskPath_Mysql=/mnt/tmpfs/mysql
 RamdiskPath_Storage=/mnt/tmpfs/backup
 
 homeDir=$HOME
+recycleDir=/tmp/recycle
 mysqlConfig=/etc/mysql/my.cnf
 apparmorConfig=/etc/apparmor.d/usr.sbin.mysqld
 apacheConfig=/etc/apache2/conf.d/anbaystorage.conf
@@ -78,7 +79,10 @@ changeStorage() {
 	sudo sed -i -e "s@$StorageOriPath@$StorageTarPath@g" "$storageConfig"
 	. /etc/apache2/envvars
 	mkdir -p $StorageTarPath
-	sudo rm -rf $StorageTarPath/*
+	mkdir -p $recycleDir
+	sudo rm -rf $recycleDir/*
+	sudo mv $StorageTarPath/* $recycleDir/
+	#sudo rm -rf $StorageTarPath/*
 	sudo chown $APACHE_RUN_USER:$APACHE_RUN_GROUP $StorageTarPath
 }
 

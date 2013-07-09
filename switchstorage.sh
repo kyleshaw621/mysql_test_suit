@@ -2,6 +2,7 @@
 #WARNING:you should add $TARPATH to /etc/apparmor.d/usr.sbin.mysqld in ubuntu.
 
 HOMEDIR=$HOME
+RecycleDir=/tmp/storageRecycle
 MYSQLCONF=/etc/mysql/my.cnf
 APACHECONF=/etc/apache2/conf.d/anbaystorage.conf
 STORAGECONF=/opt/scutech/anbay-server/Storage\ Server/storage_server.ini
@@ -30,7 +31,9 @@ changestorage() {
 	mkdir -p $TARPATH
 	sudo chown $APACHE_RUN_USER:$APACHE_RUN_GROUP $TARPATH
 	echo "remove dir $TARPATH data"
-	sudo rm -rf ${TARPATH}/*
+	mkdir $RecycleDir
+	sudo mv ${TARPATH}/* $RecycleDir/
+	#sudo rm -rf ${TARPATH}/*
 }
 
 ORIPATH=$(cat $APACHECONF | grep AnbayStorageActivityDir | head -1 | awk '{print $NF}')

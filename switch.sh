@@ -88,7 +88,7 @@ changeStorage() {
 }
 
 apacheControl() {
-	sudo service apache2 restart > $logfile
+	sudo service apache2 restart > $logfile 2>&1
 }
 
 

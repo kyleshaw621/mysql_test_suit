@@ -113,7 +113,7 @@ test_mysql() {
 	done
 }
 
-cd $improveScirptDir
 test_tools_exist
+cd $improveScirptDir
 test_mysql
 #echo "files = $backup_file_amount ,  all time = ${lengthOfTime}, insert catalog = $insert_use_time seconds"

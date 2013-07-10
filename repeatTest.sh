@@ -9,10 +9,12 @@ improveScirptDir=$homeDir/anbay-improvement/anbay_improvement/post_backup_insert
 SwitchAll=$workingDir/switch.sh
 apacheLog=/var/log/apache2/error.log
 outputstring=/tmp/outputstring
+recycleDir=/tmp/recycleDir
 DataDir=
 insert_use_time=
 backup_file_amount=
 get_block_use_time=
+who=`whoami`
 
 test_tools_exist() {
 	#get mysql status tools
@@ -94,6 +96,10 @@ test_mysql() {
 	for((i=0;i<$repeat;i++))
 	do
 		#sudo rm -rf $DataDir/*
+		mkdir -p $recycleDir
+		rm -rf $recycleDir/*
+		sudo mv $DataDir/* $recycleDir/
+		sudo chown -R $who:$who $recycleDir
 		$improveScirptDir/reset_db.sh
 		teststring=$(python $improveScirptDir/agent_simulate_wrapper.py )
 		echo "$teststring" >> $outputstring
@@ -102,6 +108,8 @@ test_mysql() {
 		get_insert_catalog_time
 		get_block_time
 		echo "$i : files = $backup_file_amount, all time = ${lengthOfTime}, insert catalog = $insert_use_time get_block = $get_block_use_time"
+		#restart mysql to avoid cache
+		sudo service mysql restart > /dev/null
 	done
 }
 

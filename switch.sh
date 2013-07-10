@@ -7,7 +7,7 @@ RamdiskPath_Mysql=/mnt/tmpfs/mysql
 RamdiskPath_Storage=/mnt/tmpfs/backup
 
 homeDir=$HOME
-recycleDir=/tmp/recycle
+recycleDir=/tmp/recycDir
 mysqlConfig=/etc/mysql/my.cnf
 apparmorConfig=/etc/apparmor.d/usr.sbin.mysqld
 apacheConfig=/etc/apache2/conf.d/anbaystorage.conf
@@ -17,6 +17,7 @@ storageTarget=
 mysqlDataDir=
 storageDataDir=
 logfile=./apache_and_mysql.log
+who=`whoami`
 
 Usage() {
 	echo "Usage: $0 [ -m mysqldisk ] [ -a storagedisk ] [-s] [-h]"
@@ -82,7 +83,7 @@ changeStorage() {
 	mkdir -p $recycleDir
 	sudo rm -rf $recycleDir/*
 	sudo mv $StorageTarPath/* $recycleDir/
-	#sudo rm -rf $StorageTarPath/*
+	sudo chown -R $who:$who $recycleDir
 	sudo chown $APACHE_RUN_USER:$APACHE_RUN_GROUP $StorageTarPath
 }
 
@@ -101,10 +102,18 @@ mysqlControl() {
 }
 
 mysqlStatus() {
+	if [ ! -e "$mysqlConfig" ];then
+		echo "Can not find $mysqlConfig"
+		exit 1
+	fi
 	mysqlDataDir=$(cat $mysqlConfig | grep ^datadir | awk -F'=' '{print $NF}')
 }
 
 storageStatus() {
+	if [ ! -e "$apacheConfig" ];then
+		echo "Can not find $apacheConfig"
+		exit 1
+	fi
 	storageDataDir=$(cat $apacheConfig | grep AnbayStorageActivityDir | head -1 | awk '{print $NF}')
 }
 

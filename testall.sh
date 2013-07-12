@@ -9,9 +9,14 @@ changeAll=$workingpath/switch.sh
 repeatTest=$workingpath/repeatTest.sh
 ram=ramdisk
 disk=harddisk
-#testtime=6
-testtime=1
+testtime=6
 #test all in harddisk
+if [ "$1" = "mysql" ];then
+	stroageSelect="$disk"
+else
+	stroageSelect="$disk $ram"
+fi
+
 echo_title() {
 	mysql=$1
 	storage=$2
@@ -25,11 +30,15 @@ echo_title() {
 for mysqlIn in $disk $ram
 do
 	mysqlTarget=$mysqlIn
-	for storageIn in $disk $ram
+	for storageIn in $stroageSelect
 	do
 		storageTarget=$storageIn
 		echo_title $mysqlTarget $storageTarget
 		$changeAll -m $mysqlTarget -a $storageTarget
+		if [ $? -ne 0 ];then
+			echo "Some is wrong in $changeAll"
+			exit 1
+		fi
 		#cd $backupScriptPath
 		$repeatTest $testtime
 		#cd $workingpath

@@ -12,8 +12,10 @@ outputstring=/tmp/outputstring
 recycleDir=/tmp/recycleDir
 DataDir=
 insert_use_time=
+all_insert_time=0
 backup_file_amount=
 get_block_use_time=
+all_get_block_time=0
 who=`whoami`
 
 test_tools_exist() {
@@ -87,6 +89,7 @@ get_backup_file_amount() {
 }
 
 test_mysql() {
+	cd $improveScirptDir
 	if [ ! -z $inputRepeat ];then
 		repeat=$inputRepeat
 	fi
@@ -95,11 +98,19 @@ test_mysql() {
 	
 	for((i=0;i<$repeat;i++))
 	do
-		#sudo rm -rf $DataDir/*
-		mkdir -p $recycleDir
-		rm -rf $recycleDir/*
-		sudo mv $DataDir/* $recycleDir/
-		sudo chown -R $who:$who $recycleDir
+		#mkdir -p $recycleDir
+		#rm -rf $recycleDir/*
+		#sudo mv $DataDir/* $recycleDir/
+		#sudo chown -R $who:$who $recycleDir
+		if [ "x$DataDir" = "x" ];then
+			echo "Can not remove data."
+		else
+			sudo rm -rf $DataDir/*
+		fi
+		if [ ! -e  $improveScirptDir/reset_db.sh ];then
+			echo "Can't not found $improveScirptDir/reset_db.sh"
+			exit 1
+		fi
 		$improveScirptDir/reset_db.sh
 		teststring=$(python $improveScirptDir/agent_simulate_wrapper.py )
 		echo "$teststring" >> $outputstring
@@ -108,12 +119,18 @@ test_mysql() {
 		get_insert_catalog_time
 		get_block_time
 		echo "$i : files = $backup_file_amount, all time = ${lengthOfTime}, insert catalog = $insert_use_time get_block = $get_block_use_time"
+		all_insert_time=$(echo $insert_use_time + $all_insert_time | bc)
+		all_get_block_time=$(echo $get_block_use_time + $all_get_block_time | bc)
 		#restart mysql to avoid cache
-		sudo service mysql restart > /dev/null
+		#sudo service mysql restart > /dev/null
 	done
+	average_insert=$(echo $all_insert_time / $repeat | bc -l )
+	average_get=$(echo $all_get_block_time / $repeat | bc -l )
+	echo "average insert catalog time : $average_insert "
+	echo "average get block time time : $average_get "
+	cd $workingDir
 }
 
 test_tools_exist
-cd $improveScirptDir
 test_mysql
 #echo "files = $backup_file_amount ,  all time = ${lengthOfTime}, insert catalog = $insert_use_time seconds"

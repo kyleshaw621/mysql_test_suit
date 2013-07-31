@@ -1,0 +1,79 @@
+#!/bin/bash
+
+workdir=$(pwd)
+
+#log info
+logDir=tpcc_logfile
+
+#mysql info
+mysql_user=root
+mysql_passwd=dingjia
+mysql_addr=127.0.0.1
+mysql_port=3306
+
+#database info
+DBname=tpcc_scutech
+WareHouses=10
+
+#tpcc info
+sourcedir=$workdir/tpcc-mysql
+bin_start=$sourcedir/tpcc_start
+bin_load=$sourcedir/tpcc_load
+WarmupTime=120
+BenchmarkTime=600
+Connects=2
+Repeat=1
+#export LD_LIBRARY_PATH=$sourcedir/lib:$LD_LIBRARY_PATH
+
+
+init_db() {
+	loginStr="-u$mysql_user -p$mysql_passwd"
+	#create database
+	mysqladmin $loginStr create $DBname
+	#create tables
+	mysql $loginStr $DBname < $sourcedir/create_table.sql
+	#create index and FK
+	mysql $loginStr $DBname < $sourcedir/add_fkey_idx.sql
+	#populate data
+	$bin_load $mysql_addr:$mysql_port $DBname $mysql_user $mysql_passwd $WareHouses
+}
+
+run_test() {
+	for((i=1;i<=$Repeat;i++));do
+		echo "	WareHouse=$WareHouse Time=$i"
+		logFile=$logDir/tpcc-$WareHouses-c$Connects.log.$i
+		$bin_start -h $mysql_addr -P $mysql_port -d $DBname -u $mysql_user -p $mysql_passwd -w $WareHouses -c $Connects -r $WarmupTime -l $BenchmarkTime 2>&1 | tee $logFile
+	done
+}
+
+Usage() {
+	cat << EOF
+Usage : $0 -a action [-w WareHouses] [-c Connects] [-h]
+	-w WareHouses: set ware house numbers. default is 10.
+	-c Connects : set connects numbers. default is 2.
+	-a action : action must be run,init.
+EOF
+	exit 1;
+}
+
+while getopts a:w:c:h OPTION
+do
+	case "$OPTION" in
+		w) WareHouses=$OPTARG ;;
+		c) Connects=$OPTARG ;;
+		a) actions=$OPTARG ;;
+		h) Usage ;;
+		*) Usage ;;
+	esac
+done
+mkdir -p $logDir
+if [ "$actions" = "init" ];then
+	echo "init"
+	init_db
+elif [ "$actions" = "run" ];then
+	echo "run"
+	run_test
+else
+	echo "Unknown option $actions"
+	Usage
+fi

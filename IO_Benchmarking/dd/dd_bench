@@ -1,0 +1,27 @@
+#!/bin/bash
+nulldevice=/dev/null
+infile=/dev/zero
+outfile=tempfile
+blocksize=1M
+countsize=1024
+Logdir=dd_log
+Logfile_prefix=$Logdir/dd_bench-${blocksize}-${countsize}
+repeats=5
+#repeats=1
+
+mkdir -p $Logdir
+for((i=1;i<=$repeats;i++))
+do
+	logfile=${Logfile_prefix}-$i
+	echo "" > $logfile
+	echo "$i TEST:Write Speed..."
+	dd if=$infile of=$outfile bs=$blocksize count=$countsize conv=fdatasync,notrunc >> $logfile 2>&1
+	echo "$i TEST:Read Speed..."
+	#sudo echo 3 > /proc/sys/vm/drop_caches
+	dd if=$outfile of=$nulldevice bs=$blocksize count=$countsize >> $logfile 2>&1
+	echo "$i TEST:RE-Read Speed..."
+	dd if=$outfile of=$nulldevice bs=$blocksize count=$countsize >> $logfile 2>&1
+	
+	#remove tempfile
+	rm $outfile
+done

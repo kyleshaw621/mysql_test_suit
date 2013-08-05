@@ -1,0 +1,46 @@
+#!/bin/bash
+
+targetdir=$1
+
+if [ "x$targetdir" = "x" ];then
+	echo "Usage: $0 targetDir"
+	exit 1
+fi
+
+
+cd $targetdir
+echo $targetdir
+allfile=$(ls)
+
+#title
+echo -e "Write\tRead\tReread"
+
+for logfile in $allfile
+do
+WRITE_LINE=$(cat $logfile | grep copied | sed -n '1p')
+READ_LINE=$(cat $logfile | grep copied | sed -n '2p')
+REREAD_LINE=$(cat $logfile | grep copied | sed -n '3p')
+
+WRITE_SPEED=$(echo $WRITE_LINE | awk '{print $(NF-1)}')
+READ_SPEED=$(echo $READ_LINE | awk '{print $(NF-1)}')
+REREAD_SPEED=$(echo $REREAD_LINE | awk '{print $(NF-1)}')
+
+WRITE_SPEED_UNIT=$(echo $WRITE_LINE | awk '{print $(NF)}')
+READ_SPEED_UNIT=$(echo $READ_LINE | awk '{print $(NF)}')
+REREAD_SPEED_UNIT=$(echo $REREAD_LINE | awk '{print $(NF)}')
+
+#echo "$WRITE_SPEED_UNIT $READ_SPEED_UNIT $REREAD_SPEED_UNIT"
+
+if [ "$WRITE_SPEED_UNIT" = "GB/s" ];then
+	WRITE_SPEED=$(echo "${WRITE_SPEED} * 1000" | bc)
+fi
+if [ "$READ_SPEED_UNIT" = "GB/s" ];then
+	READ_SPEED=$(echo "${READ_SPEED} * 1000" | bc)
+fi
+if [ "$REREAD_SPEED_UNIT" = "GB/s" ];then
+	REREAD_SPEED=$(echo "${REREAD_SPEED} * 1000" | bc)
+fi
+
+echo -e "$WRITE_SPEED\t$READ_SPEED\t$REREAD_SPEED"
+
+done

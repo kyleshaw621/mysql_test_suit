@@ -1,0 +1,49 @@
+#!/bin/bash
+
+DEVPATH="/dev/disk/by-id"
+MAPPATH="/dev/mapper"
+
+HDD_ID="scsi-SATA_ST2000DM001-1CH_Z1E4F12T-part6"
+HDD=$DEVPATH/$HDD_ID
+SSD_ID="scsi-SATA_INTEL_SSDSA2CT0CVPR124302J0040AGN-part1"
+SSD=$DEVPATH/$SSD_ID
+
+METADATA_NAME="ssd-metadata"
+BLOCKS_NAME="ssd-blocks"
+DM_CACHE_DISK="home-cached"
+#get ssd capacity
+#echo "sudo blockdev --getsize64 $DEVPATH/$SSD_ID"
+HDDAccount=$(sudo blockdev --getsize64 $HDD)
+HDD_SESSION_SIZE=$(sudo blockdev --getpbsz $HDD)
+HDD_BLOCK_SIZE=$(sudo blockdev --getbsz $HDD)
+SSDAccount=$(sudo blockdev --getsize64 $SSD)
+SSD_SESSION_SIZE=$(sudo blockdev --getpbsz $SSD)
+SSD_BLOCK_SIZE=$(sudo blockdev --getbsz $SSD)
+
+#SSD metadata
+MetaData_Byte=$(echo "4194304 + 16 * $SSDAccount / 262144" | bc)
+MetaData_Session=$(echo "$MetaData_Byte / $SSD_SESSION_SIZE" | bc)
+Blocks_Session=$(echo "$SSDAccount / $SSD_SESSION_SIZE - $MetaData_Session" | bc)
+#HDD_Session=$(echo "$HDDAccount / $HDD_SESSION_SIZE" | bc)
+HDD_Session=$(sudo blockdev --getsz $HDD)
+
+
+echo "      ================"
+echo "      =    create    ="
+echo "      ================"
+echo "sudo dmsetup create $METADATA_NAME --table '0 $MetaData_Session linear $SSD 0'"
+echo "sudo dd if=/dev/zero of=$MAPPATH/$METADATA_NAME"
+echo "sudo dmsetup create $BLOCKS_NAME --table '0 $Blocks_Session linear $SSD $MetaData_Session'"
+echo "sudo dmsetup create $DM_CACHE_DISK --table '0 $HDD_Session cache $MAPPATH/$METADATA_NAME $MAPPATH/$BLOCKS_NAME $HDD 512 1 writeback default 0'"
+
+echo "      ================"
+echo "      =   destory    ="
+echo "      ================"
+echo "sudo umount $MAPPATH/$DM_CACHE_DISK"
+echo "sudo dmsetup table $DM_CACHE_DISK"
+echo "sudo dmsetup status $DM_CACHE_DISK"
+echo "sudo dmsetup suspend $DM_CACHE_DISK"
+echo "sudo sudo dmsetup reload $DM_CACHE_DISK --table '0 $HDD_Session cache ****** 512 0 cleaner 0'"
+echo "sudo dmsetup resume $DM_CACHE_DISK"
+echo "sudo dmsetup wait $DM_CACHE_DISK"
+echo "sudo dmsetup remove $DM_CACHE_DISK $METADATA_NAME $BLOCKS_NAME"

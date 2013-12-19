@@ -7,11 +7,12 @@ if [ "x$log_filedir" = "x" ];then
 fi
 
 #echo Title
-title="threads\ttime\t\ttotal_events\tevents(/s)\tread/wirte(/s)\t95%event_time(/ms)\tThread_fair"
+title="threads\ttime\t\ttotal_events\tevents(/s)\t95%event_time(/ms)\tThread_fair"
 echo -e $title
 
 cd $log_filedir
-allfile=$(ls -f | grep oltp)
+#allfile=$(ls -f | grep oltp)
+allfile=$(ls | grep oltp)
 
 for logfile in $allfile
 do

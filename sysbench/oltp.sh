@@ -6,8 +6,8 @@
 THREADS=2		#total number of worker threads
 MAXREQUIRE=0		#0 mean unlimit
 MAXTIME=60
-TABLESIZE=1000000
-repeat=3
+TABLESIZE=10000000
+repeat=5
 #DBType=pgsql		#or mysql
 DBType=mysql
 DBName=sbtest
@@ -21,7 +21,8 @@ mysql_param="--db-driver=mysql --mysql-table-engine=innodb --mysql-user=$mysql_u
 pgsql_user=kyle
 pgsql_password=dingjia
 pgsql_host=localhost
-pgsql_param="--db-driver=pgsql --pgsql-host=$pgsql_host --pgsql-user=$pgsql_user --pgsql-password=$pgsql_password"
+pgsql_port=5433 #discriminate different version of pg
+pgsql_param="--db-driver=pgsql --pgsql-host=$pgsql_host --pgsql-user=$pgsql_user --pgsql-password=$pgsql_password --pgsql-port=$pgsql_port"
 
 if [ -e ./sysbench ];then
 	ldd ./sysbench > /dev/null 2>&1
@@ -44,6 +45,10 @@ run_test() {
 		echo "*********************************************"		>> $logfile
 		#$bin_sysbench --test=oltp --mysql-table-engine=innodb --oltp-table-size=$TABLESIZE --mysql-user=$user --mysql-password=$password --max-time=$MAXTIME --max-requests=$MAXREQUIRE --num-threads=$THREADS run >> $logfile
 		echo "$bin_sysbench --test=oltp $param --oltp-table-size=$TABLESIZE --max-time=$MAXTIME --max-requests=$MAXREQUIRE --num-threads=$THREADS run " >> $logfile
+		#if [ "$DBType" = "pgsql" ];then
+		#	echo "clean database $DBName"
+		#	vacuumdb --full --dbname=$DBName
+		#fi
 		$bin_sysbench --test=oltp $param --oltp-table-size=$TABLESIZE --max-time=$MAXTIME --max-requests=$MAXREQUIRE --num-threads=$THREADS run >> $logfile
 	done
 }
@@ -56,7 +61,7 @@ prepare() {
 EOF
 	### 使用sysbench插入数据的速度非常慢，所以当创建表成功好，可以杀掉sysbench的进程，然后用下面的两条语句插入数据到PostgreSQL中
 	#1) truncate sbtest ;
-	#2) INSERT INTO sbtest(k, c, pad) select 0,' ','qqqqqqqqqqwwwwwwwwwweeeeeeeeeerrrrrrrrrrtttttttttt' from generate_series(1,1000000);
+	#2) INSERT INTO sbtest(k, c, pad) select 0,' ','qqqqqqqqqqwwwwwwwwwweeeeeeeeeerrrrrrrrrrtttttttttt' from generate_series(1,10000000);
 	else
 		mysql -u$mysql_user -p$mysql_password -e "use sbtest; drop table sbtest;"
 		prepare_param="--mysql-socket=/var/run/mysqld/mysqld.sock"
@@ -72,7 +77,7 @@ EOF
 Usage() {
 	cat <<EOF
 Usage: $0 [-p] [-r] [-a] [-c] [-h] [-u username] [-p password] [-t repeatTime] [-s tableSize] [-d dbtype] [-x thread]
-	d : database type [mysql(default)|pgsql]
+	d : database type [mysql|pgsql] (default:$DBType)
 	p : prepare databases
 	r : run test
 	a : auto run prepare and test
@@ -80,7 +85,7 @@ Usage: $0 [-p] [-r] [-a] [-c] [-h] [-u username] [-p password] [-t repeatTime] [
 	u : mysql user name
 	p : mysql password
 	t : run test times
-	s : table size (default is 1000000)
+	s : table size (default is $TABLESIZE)
 	h : display help message
 EOF
 	exit 0

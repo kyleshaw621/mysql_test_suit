@@ -1,5 +1,4 @@
-#
-/bin/sh
+#/bin/sh
 
 db_name=kyle
 post_8_4=5433

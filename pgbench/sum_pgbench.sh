@@ -1,6 +1,6 @@
 #!/bin/bash
 #!/bin/bash -aux
-repeat=3
+repeat=5
 
 all_transaction=0
 tmp_file=/tmp/pg_output
